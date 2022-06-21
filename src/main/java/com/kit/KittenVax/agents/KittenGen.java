@@ -67,15 +67,9 @@ public class KittenGen extends AbstractBehavior<Vet.Command>{
 		
 		ArrayList<Kitten> curBatch = genKittens(msg.nKittens);
 		KittenMessage reply = new KittenMessage(curBatch, msg.replyTo);
-		sendReply(reply);
+		msg.replyTo.tell(reply);
 		
 		return this;
-	}
-	
-	/* TODO ??? Should make part of other function ??? */
-	/* Sends reply to Vet */
-	private void sendReply(KittenMessage msg) {
-		msg.replyTo.tell(msg);
 	}
 	
 	/* Creates n kittens, with a 20% chance of being vaxxed already,
@@ -94,7 +88,6 @@ public class KittenGen extends AbstractBehavior<Vet.Command>{
 			Kitten k = new Kitten(vax);
 			kittens.add(k);
 		}
-		
 		return kittens;
 	}
 

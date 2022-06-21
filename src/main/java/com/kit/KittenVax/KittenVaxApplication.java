@@ -15,12 +15,14 @@ public class KittenVaxApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(KittenVaxApplication.class, args);
 		
-		RestClient client = new RestClient();
-		System.out.println(client.getRequest());
+//		RestClient client = new RestClient();
+//		System.out.println(client.getRequest());
+		start();
 	}
 	
-	private void start() {
+	private static void start() {
 		ActorSystem<Vet.Command> mySystem = ActorSystem.create(Vet.create(), "mySystem");
+		mySystem.tell(new Vet.Start(5, 5, mySystem));
 	}
 
 }

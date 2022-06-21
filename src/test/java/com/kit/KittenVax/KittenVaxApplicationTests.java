@@ -25,19 +25,18 @@ class KittenVaxApplicationTests {
 	
 	@Test
 	public void startMsgTest() {
+		/* Spawn KittenGen */
 		ActorRef<Vet.Command> kittenGen = testKit.spawn(KittenGen.create(), "k-gen");
+		/* Send Start message to KittenGen */
 		kittenGen.tell(new Vet.Start(nKittens, nTimes, probe.ref()));
 		
+		/* Create fake batch of kittens to test against response */
 		ArrayList<Kitten> a = KittenGen.genKittens(nKittens);
-		
+		/* If the response message has the same sized batch and replyTo, it is the expected message */
 		probe.expectMessage(new KittenGen.KittenMessage(a, kittenGen));
-		
 	}
 	
-	@Test
-	public void test() {
-		
-	}
+	
 	
 	@AfterClass
 	public static void cleanup() {
