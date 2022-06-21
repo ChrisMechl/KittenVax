@@ -1,6 +1,10 @@
 package com.kit.KittenVax;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.AfterClass;
 import org.junit.jupiter.api.Test;
@@ -31,12 +35,37 @@ class KittenVaxApplicationTests {
 		kittenGen.tell(new Vet.Start(nKittens, nTimes, probe.ref()));
 		
 		/* Create fake batch of kittens to test against response */
-		ArrayList<Kitten> a = KittenGen.genKittens(nKittens);
+		ArrayList<Kitten> kList = KittenGen.genKittens(nKittens);
 		/* If the response message has the same sized batch and replyTo, it is the expected message */
-		probe.expectMessage(new KittenGen.KittenMessage(a, kittenGen));
+		probe.expectMessage(new KittenGen.KittenMessage(kList, kittenGen));
 	}
 	
-	
+	@Test
+	/* Checks that Vet.filterVaxxed returns a List of vaxxed kittens and modifies the input ArrayList to only contain non-vaxxed kittens*/
+	public void testKittenVaxFilter() {
+		/* Create ArrayList of Kittens where two are vaxxed and three are not */
+		ArrayList<Kitten> kList = new ArrayList<Kitten>(5);
+		kList.add(new Kitten(true));
+		kList.add(new Kitten(false));
+		kList.add(new Kitten(false));
+		kList.add(new Kitten(false));
+		kList.add(new Kitten(true));
+		
+		List<Kitten> vaxxed = Vet.filterVaxxed(kList);
+		/* Two kittens were vaxxed and put in the vaxxed List */
+		assertEquals(2, vaxxed.size());
+		/* Three kittens were not vaxxed and remained in the original kList */
+		assertEquals(3, kList.size());
+		
+		/* Assert all members of vaxxed are vaxxed */
+		for(int i = 0; i < 2; i++) {
+			assertTrue(vaxxed.get(i).isVaxxed());
+		}
+		/* Assert all members of kList(unvaxxed) are not vaxxed */
+		for(int i = 0; i < 3; i++) {
+			assertTrue(!kList.get(i).isVaxxed());
+		}
+	}
 	
 	@AfterClass
 	public static void cleanup() {
