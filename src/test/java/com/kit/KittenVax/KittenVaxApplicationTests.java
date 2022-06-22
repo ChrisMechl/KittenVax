@@ -4,15 +4,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import org.junit.AfterClass;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import com.kit.KittenVax.agents.KittenGen;
 import com.kit.KittenVax.agents.Vaxxer;
 import com.kit.KittenVax.agents.Vet;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 
 import akka.actor.testkit.typed.javadsl.ActorTestKit;
 import akka.actor.testkit.typed.javadsl.TestProbe;
@@ -21,6 +23,7 @@ import akka.actor.typed.ActorRef;
 @SpringBootTest
 class KittenVaxApplicationTests {
 
+//	Config config = ConfigFactory.load();
 	static final ActorTestKit testKit = ActorTestKit.create();
 	TestProbe<Vet.Command> probe = testKit.createTestProbe();
 	
@@ -148,6 +151,48 @@ class KittenVaxApplicationTests {
 		probe.expectMessage(new Vaxxer.VaxxerMessage(single));
 		probe.expectMessage(new Vaxxer.VaxxerMessage(vaxxed));	
 	}
+	
+	/* Tests that upon a single failure of a child, the child will throw the exception,
+	 * restart and successfully deliver the message on the next attempt */
+	@Test
+	public void testSingleFailedVaxxer() {
+		ArrayList<Kitten> batch = new ArrayList<Kitten>(3);
+		batch.add(new Kitten(false));
+		batch.add(new Kitten(false));
+		batch.add(new Kitten(false));
+		
+		ActorRef<Vet.Command> vet = testKit.spawn(Vet.create());
+		
+		KittenGen.KittenMessage msg = new KittenGen.KittenMessage(batch, probe.ref());
+		msg.fails = 1;
+		
+		vet.tell(msg);
+		/* Child failed due to msg.fails > 0 */
+		Assertions.assertThrows(RuntimeException.class, null);
+		/* The probe still gets the message which was sent by the child even after the first fail */
+		probe.expectMessage(new Vaxxer.VaxxerMessage(batch));
+	}
+	
+	/* Tests that after 3 failures, a child will send a VaxFailed message to it's parent */
+	@Test
+	public void testFourFailedVaxxer() {
+		ArrayList<Kitten> batch = new ArrayList<Kitten>(3);
+		batch.add(new Kitten(false));
+		batch.add(new Kitten(false));
+		batch.add(new Kitten(false));
+		
+		ActorRef<Vet.Command> vet = testKit.spawn(Vet.create());
+		
+		KittenGen.KittenMessage msg = new KittenGen.KittenMessage(batch, probe.ref());
+		msg.fails = 4;
+		
+		vet.tell(msg);
+		/* Child failed due to msg.fails > 0 */
+		Assertions.assertThrows(RuntimeException.class, null);
+		/* After 3 consecutive fails, child will send a VaxFailed message to Vet */
+		probe.expectMessage(new Vaxxer.VaxFailed(new KittenGen.KittenMessage(batch, probe.ref())));
+	}
+	
 	
 	@AfterClass
 	public static void cleanup() {
