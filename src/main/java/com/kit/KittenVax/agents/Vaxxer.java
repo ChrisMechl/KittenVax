@@ -49,7 +49,7 @@ public class Vaxxer extends AbstractBehavior<Command>{
 	/* The current message to be resent to self in case of exception */
 	private KittenGen.KittenMessage msg;
 	
-	static Behavior<Command> create(){
+	public static Behavior<Command> create(){
 		return Behaviors.setup(Vaxxer::new);
 	}
 	

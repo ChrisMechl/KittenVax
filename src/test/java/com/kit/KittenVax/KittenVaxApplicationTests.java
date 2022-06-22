@@ -68,24 +68,41 @@ class KittenVaxApplicationTests {
 		}
 	}
 	
-	//TODO self sending vaxxed kittens from Vet to Vet
+	/* Checks that Vet can successfully send itself a Vaxxer.VaxxerMessage which contains the already vaxxed kittens received from KittenGen */
 	@Test
 	public void testSelfSendVaxxedKittens() {
+		/* Create a few vaxxed kittens */
 		ArrayList<Kitten> vaxxed = new ArrayList<Kitten>(3);
 		vaxxed.add(new Kitten(true));
 		vaxxed.add(new Kitten(true));
 		vaxxed.add(new Kitten(true));
 		
-//		ActorRef<Vet.Command> vet = testKit.spawn(Vet.create(), "vet");
 		probe.ref().tell(new Vaxxer.VaxxerMessage(vaxxed));
 		
 		probe.expectMessage(new Vaxxer.VaxxerMessage(vaxxed));
 	}
 	
-	//TODO test sending unvaxxed to child
+	/* Tests that sending a batch of unvaxxed kittens to Vaxxer will return a batch of vaxxed kittens to Vet */
 	@Test
 	public void testChild() {
+		/* Create some unvaxxed kittens */
+		ArrayList<Kitten> unvaxxed = new ArrayList<Kitten>(4);
+		unvaxxed.add(new Kitten(false));
+		unvaxxed.add(new Kitten(false));
+		unvaxxed.add(new Kitten(false));
+		unvaxxed.add(new Kitten(false));
 		
+		/* And some vaxxed kittens of the same size batch */
+		ArrayList<Kitten> vaxxed = new ArrayList<Kitten>(4);
+		vaxxed.add(new Kitten(true));
+		vaxxed.add(new Kitten(true));
+		vaxxed.add(new Kitten(true));
+		vaxxed.add(new Kitten(true));
+		
+		ActorRef<Vet.Command> vaxr = testKit.spawn(Vaxxer.create(), "vaxr");
+		vaxr.tell(new KittenGen.KittenMessage(unvaxxed, probe.getRef()));
+		
+		probe.expectMessage(new Vaxxer.VaxxerMessage(vaxxed));
 	}
 	
 	@AfterClass
