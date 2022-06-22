@@ -42,9 +42,6 @@ public class KittenGen extends AbstractBehavior<Vet.Command>{
 			
 		}
 	}
-	
-	private int nKittens;
-	private int nTimes;
 
 	public KittenGen(ActorContext<Command> context) {
 		super(context);
@@ -54,6 +51,7 @@ public class KittenGen extends AbstractBehavior<Vet.Command>{
 		return Behaviors.setup(KittenGen::new);
 	}
 	
+	/* Only receives the Start message which starts the generating of kittens for a single batch */
 	@Override
 	public Receive<Command> createReceive() {
 		return newReceiveBuilder()
@@ -61,12 +59,13 @@ public class KittenGen extends AbstractBehavior<Vet.Command>{
 				.build();
 	}
 	
+	//TODO handle generating nBatches here or in Vet?
 	/* On Start receive, generate kittens and send reply with kitten batch */
 	private Behavior<Command> onStart(Vet.Start msg) {
-		this.nKittens = msg.nKittens;
-		this.nTimes = msg.nTimes;
-		
+		/* Creates n kittens using genKittens() method and stores in curBatch */
 		ArrayList<Kitten> curBatch = genKittens(msg.nKittens);
+		/* Creates KittenMessage that will be forwarded to Vaxxer. The replyTo field is the Vet ref because that's who
+		 * the Vaxxer will be sending the VaxxerMessage to */
 		KittenMessage reply = new KittenMessage(curBatch, msg.replyTo);
 		msg.replyTo.tell(reply);
 		
