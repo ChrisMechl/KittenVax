@@ -21,7 +21,6 @@ public class Vet extends AbstractBehavior<Vet.Command>{
 	/* Top level message for Vet and KittenGen */
 	public interface Command {}
 	
-	
 	/* Start command to be sent from vet to kittenGen
 	 * 
 	 * nKittens: Number of kittens to generate per batch
@@ -53,9 +52,11 @@ public class Vet extends AbstractBehavior<Vet.Command>{
 		}
 	}
 	
+	/* RestClient containing methods for POSTing Kittens */
 	private RestClient client = new RestClient();
-	
+	/* KittenGen ref */
 	private ActorRef<Command> kgen;
+	/* Array holding child refs */
 	private ArrayList<ActorRef<Command>> children;
 	
 	/* Default constructor */
@@ -70,7 +71,7 @@ public class Vet extends AbstractBehavior<Vet.Command>{
 	}
 	
 	/* On Start receive from main method, create KittenGen and forward Start message
-	/* On KittenMessage (reply from KittenGen), send batch to be filtered on vax status and delegate to child to vax unvaxxed 
+	 * On KittenMessage (reply from KittenGen), send batch to be filtered on vax status and delegate to child to vax unvaxxed 
 	 * On VaxxerMessage (a batch of fully vaxxed kittens either from self or Vaxxer), send batch to be persisted on server
 	 * On VaxFailed from Vaxxer indicating failure to vaxinate kittens, print error to console*/
 	@Override
@@ -120,16 +121,15 @@ public class Vet extends AbstractBehavior<Vet.Command>{
 		return this;
 	}
 	
-	//TODO throw exception?
-	//TODO end agents 
 	/* In the case of three consecutive failures to vax a batch of kittens by Vaxxer, this message is sent from Vaxxer */
 	/* Handling this is probably out of scope so we'll just print a message letting the user know what happened */
 	private Behavior<Command> vaxFailed(Vaxxer.VaxFailed msg){
-		System.out.println("Uh oh, vaccination of the following kittens failed - ");
+		System.err.println("Uh oh, vaccination of the following kittens failed - ");
 		for(Kitten k : msg.msg.batch) {
-			System.out.print(k + ", ");
+			System.err.print(k + ", ");
 		}
-		return this;
+		
+		return Behaviors.stopped();
 	}
 	
 	/* Filters vaxxed kittens from the batch that was received from KittenMessage.
@@ -148,6 +148,4 @@ public class Vet extends AbstractBehavior<Vet.Command>{
 		
 		return filtered;
 	}
-	
-	
 }
