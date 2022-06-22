@@ -26,7 +26,7 @@ class KittenVaxApplicationTests {
 	int nKittens = 5;
 	int nTimes = 1;
 	
-	
+	/* Tests that KittenGen responds with a KittenMessage when receiving a Start Message */
 	@Test
 	public void startMsgTest() {
 		/* Spawn KittenGen */
@@ -40,8 +40,8 @@ class KittenVaxApplicationTests {
 		probe.expectMessage(new KittenGen.KittenMessage(kList, kittenGen));
 	}
 	
-	@Test
 	/* Checks that Vet.filterVaxxed returns a List of vaxxed kittens and modifies the input ArrayList to only contain non-vaxxed kittens*/
+	@Test
 	public void testKittenVaxFilter() {
 		/* Create ArrayList of Kittens where two are vaxxed and three are not */
 		ArrayList<Kitten> kList = new ArrayList<Kitten>(5);
