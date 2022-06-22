@@ -66,8 +66,10 @@ public class Vet extends AbstractBehavior<Vet.Command>{
 		return Behaviors.setup(Vet::new);
 	}
 	
-	/* On Start receive from main method, create KittenGen and forward Start message */
-	/* On KittenMessage (reply from KittenGen), send batch to be filtered on vax status and delegate to child to vax unvaxxed */
+	/* On Start receive from main method, create KittenGen and forward Start message
+	/* On KittenMessage (reply from KittenGen), send batch to be filtered on vax status and delegate to child to vax unvaxxed 
+	 * On VaxxerMessage (a batch of fully vaxxed kittens either from self or Vaxxer), send batch to be persisted on server
+	 * On VaxFailed from Vaxxer indicating failure to vaxinate kittens, print error to console*/
 	@Override
 	public Receive<Command> createReceive() {
 		return newReceiveBuilder()
@@ -110,6 +112,8 @@ public class Vet extends AbstractBehavior<Vet.Command>{
 		return this;
 	}
 	
+	//TODO throw exception?
+	//TODO end agents 
 	/* In the case of three consecutive failures to vax a batch of kittens by Vaxxer, this message is sent from Vaxxer */
 	/* Handling this is probably out of scope so we'll just print a message letting the user know what happened */
 	private Behavior<Command> vaxFailed(Vaxxer.VaxFailed msg){
