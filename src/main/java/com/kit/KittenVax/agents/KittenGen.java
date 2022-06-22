@@ -27,6 +27,7 @@ public class KittenGen extends AbstractBehavior<Vet.Command>{
 		ActorRef<Command> replyTo;
 		/* KittenMessage will always start with 0 attempts. This is changed by Vaxxer in case of failure to parse unvaxxed kittens */
 		public int attempts = 0;
+		public int count = 0;
 		
 		public KittenMessage(ArrayList<Kitten> batch, ActorRef<Command> replyTo) {
 			this.batch = batch;
@@ -68,12 +69,15 @@ public class KittenGen extends AbstractBehavior<Vet.Command>{
 	//TODO handle generating nBatches here or in Vet?
 	/* On Start receive, generate kittens and send reply with kitten batch */
 	private Behavior<Command> onStart(Vet.Start msg) {
-		/* Creates n kittens using genKittens() method and stores in curBatch */
-		ArrayList<Kitten> curBatch = genKittens(msg.nKittens);
-		/* Creates KittenMessage that will be forwarded to Vaxxer. The replyTo field is the Vet ref because that's who
-		 * the Vaxxer will be sending the VaxxerMessage to */
-		KittenMessage reply = new KittenMessage(curBatch, msg.replyTo);
-		msg.replyTo.tell(reply);
+		for(int i = 0; i < msg.nTimes; i++) {
+			/* Creates n kittens using genKittens() method and stores in curBatch */
+			ArrayList<Kitten> curBatch = genKittens(msg.nKittens);
+			/* Creates KittenMessage that will be forwarded to Vaxxer. The replyTo field is the Vet ref because that's who
+			 * the Vaxxer will be sending the VaxxerMessage to */
+			KittenMessage reply = new KittenMessage(curBatch, msg.replyTo);
+			reply.count = i;
+			msg.replyTo.tell(reply);
+		}
 		
 		return this;
 	}
