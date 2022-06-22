@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.kit.KittenVax.Kitten;
+import com.kit.api.RestClient;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
@@ -52,6 +53,8 @@ public class Vet extends AbstractBehavior<Vet.Command>{
 		}
 	}
 	
+	private RestClient client = new RestClient();
+	
 	private ActorRef<Command> kgen;
 	private ArrayList<ActorRef<Command>> children;
 	
@@ -85,22 +88,22 @@ public class Vet extends AbstractBehavior<Vet.Command>{
 		kgen = getContext().spawn(KittenGen.create(), "k-gen");
 		kgen.tell(msg);
 		return this;
-		
 	}
 	
 	/* On KittenMessage (reply from KittenGen), send batch to be filtered on vax status and delegate to child to vax unvaxxed */
 	private Behavior<Command> delegateBatch(KittenGen.KittenMessage msg) {
 		/* Uses filterVaxxed to get a List of only the vaxxed kittens and removes them from the message batch */
-		ArrayList<Kitten> filtered = (ArrayList<Kitten>) filterVaxxed(msg.batch);
+		ArrayList<Kitten> filtered = (ArrayList<Kitten>) filterVaxxed(msg.batch);		
 		/* Sends message to self containing the ArrayList of already vaxxed kittens */
-		msg.replyTo.tell(new Vaxxer.VaxxerMessage(filtered));
-		
+		if(filtered.size() > 0) {
+			msg.replyTo.tell(new Vaxxer.VaxxerMessage(filtered));
+		}
 		/* If the batch contained only vaxxed kittens, we don't need to spawn a child */
 		if(msg.batch.size() == 0) {
 			return this;
 		}
 		/* Creates a child to handle vaxxing the unvaxxed kittens */
-		ActorRef<Command> child = getContext().spawn(Behaviors.supervise(Vaxxer.create()).onFailure(SupervisorStrategy.restart()), "child");
+		ActorRef<Command> child = getContext().spawn(Behaviors.supervise(Vaxxer.create()).onFailure(SupervisorStrategy.restart()), "child" + msg.count);
 		/* Saves the child's ref */
 		children.add(child);		
 		/* Forwards the KittenMessage to the child */
@@ -111,7 +114,9 @@ public class Vet extends AbstractBehavior<Vet.Command>{
 	
 	/* Receives a batch of vaxxed kittens to send to the server */
 	private Behavior<Command> sendVaxxed(Vaxxer.VaxxerMessage msg){
-		System.out.println(msg.batch.size());
+		for(Kitten k : msg.batch) {
+			client.postRequest(k);
+		}
 		return this;
 	}
 	
