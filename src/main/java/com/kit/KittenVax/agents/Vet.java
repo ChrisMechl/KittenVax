@@ -95,7 +95,10 @@ public class Vet extends AbstractBehavior<Vet.Command>{
 		/* Sends message to self containing the ArrayList of already vaxxed kittens */
 		msg.replyTo.tell(new Vaxxer.VaxxerMessage(filtered));
 		
-		
+		/* If the batch contained only vaxxed kittens, we don't need to spawn a child */
+		if(msg.batch.size() == 0) {
+			return this;
+		}
 		/* Creates a child to handle vaxxing the unvaxxed kittens */
 		ActorRef<Command> child = getContext().spawn(Behaviors.supervise(Vaxxer.create()).onFailure(SupervisorStrategy.restart()), "child");
 		/* Saves the child's ref */
@@ -108,7 +111,7 @@ public class Vet extends AbstractBehavior<Vet.Command>{
 	
 	/* Receives a batch of vaxxed kittens to send to the server */
 	private Behavior<Command> sendVaxxed(Vaxxer.VaxxerMessage msg){
-		//TODO handle sending to server
+		System.out.println(msg.batch.size());
 		return this;
 	}
 	

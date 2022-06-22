@@ -77,9 +77,17 @@ class KittenVaxApplicationTests {
 		vaxxed.add(new Kitten(true));
 		vaxxed.add(new Kitten(true));
 		
-		probe.ref().tell(new Vaxxer.VaxxerMessage(vaxxed));
+		/* Because the Vet filter function removes elements from the original list (vaxxed) we need to use
+		 * a clone of the vaxxed list to check against message equality. We could also just make another list
+		 * with three true vaxxed Kittens but this is faster
+		 */
+		ArrayList<Kitten> compare = (ArrayList<Kitten>) vaxxed.clone();
 		
-		probe.expectMessage(new Vaxxer.VaxxerMessage(vaxxed));
+		/* Send Vet the KittenMessage */
+		ActorRef<Vet.Command> vet = testKit.spawn(Vet.create());
+		vet.tell(new KittenGen.KittenMessage(vaxxed, probe.getRef()));
+		/* If the probe received a VaxxerMessage with a batch of size 3, the expected message is correct */
+		probe.expectMessage(new Vaxxer.VaxxerMessage(compare));
 	}
 	
 	/* Tests that sending a batch of unvaxxed kittens to Vaxxer will return a batch of vaxxed kittens to Vet */
