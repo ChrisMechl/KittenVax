@@ -9,6 +9,7 @@ import com.kit.KittenVax.Kitten;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
+import akka.actor.typed.SupervisorStrategy;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
@@ -52,10 +53,12 @@ public class Vet extends AbstractBehavior<Vet.Command>{
 	}
 	
 	private ActorRef<Command> kgen;
+	private ArrayList<ActorRef<Command>> children;
 	
 	/* Default constructor */
 	private Vet(ActorContext<Command> context) {
 		super(context);
+		children = new ArrayList<ActorRef<Command>>();
 	}
 
 	/* Public factory method for Vet */
@@ -70,6 +73,8 @@ public class Vet extends AbstractBehavior<Vet.Command>{
 		return newReceiveBuilder()
 				.onMessage(Start.class, this::start)
 				.onMessage(KittenGen.KittenMessage.class, this::delegateBatch)
+				.onMessage(Vaxxer.VaxxerMessage.class, this::sendVaxxed)
+				.onMessage(Vaxxer.VaxFailed.class, this::vaxFailed)
 				.build();
 	}
 	
@@ -83,8 +88,32 @@ public class Vet extends AbstractBehavior<Vet.Command>{
 	
 	/* On KittenMessage (reply from KittenGen), send batch to be filtered on vax status and delegate to child to vax unvaxxed */
 	private Behavior<Command> delegateBatch(KittenGen.KittenMessage msg) {
+		/* Uses filterVaxxed to get a List of only the vaxxed kittens and removes them from the message batch */
 		List<Kitten> filtered = filterVaxxed(msg.batch);
-		//TODO delegate to children
+		/* Creates a child to handle vaxxing the unvaxxed kittens */
+		ActorRef<Command> child = getContext().spawn(Behaviors.supervise(Vaxxer.create()).onFailure(SupervisorStrategy.restart()), "child");
+		/* Saves the child's ref */
+		children.add(child);		
+		/* Forwards the KittenMessage to the child */
+		child.tell(msg);
+		
+		//TODO send self vaxxermessage with already filtered kittens
+		return this;
+	}
+	
+	/* Receives a batch of vaxxed kittens to send to the server */
+	private Behavior<Command> sendVaxxed(Vaxxer.VaxxerMessage msg){
+		//TODO handle sending to server
+		return this;
+	}
+	
+	/* In the case of three consecutive failures to vax a batch of kittens by Vaxxer, this message is sent from Vaxxer */
+	/* Handling this is probably out of scope so we'll just print a message letting the user know what happened */
+	private Behavior<Command> vaxFailed(Vaxxer.VaxFailed msg){
+		System.out.println("Uh oh, vaccination of the following kittens failed - ");
+		for(Kitten k : msg.msg.batch) {
+			System.out.print(k + ", ");
+		}
 		return this;
 	}
 	
@@ -93,7 +122,7 @@ public class Vet extends AbstractBehavior<Vet.Command>{
 	 * from the batch so it only contains kittens that still need vax so the batch
 	 * can be sent to children in delegateBatch()
 	 */
-	public List<Kitten> filterVaxxed(ArrayList<Kitten> batch){
+	public static List<Kitten> filterVaxxed(ArrayList<Kitten> batch){
 		/* Get a list of the kittens that are already vaxxed */
 		List<Kitten> filtered = batch
 				.stream()

@@ -1,0 +1,79 @@
+package com.kit.KittenVax.agents;
+
+import java.util.ArrayList;
+
+import com.kit.KittenVax.Kitten;
+import com.kit.KittenVax.agents.Vet.Command;
+
+import akka.actor.typed.Behavior;
+import akka.actor.typed.PreRestart;
+import akka.actor.typed.javadsl.AbstractBehavior;
+import akka.actor.typed.javadsl.ActorContext;
+import akka.actor.typed.javadsl.Behaviors;
+import akka.actor.typed.javadsl.Receive;
+
+public class Vaxxer extends AbstractBehavior<Command>{
+	
+	/* Message to send to Vet once kittens have been vaxxed */
+	public static class VaxxerMessage implements Command{
+		ArrayList<Kitten> batch;
+		
+		public VaxxerMessage(ArrayList<Kitten> batch) {
+			this.batch = batch;
+		}
+	}
+	
+	public static class VaxFailed implements Command{
+		VaxxerMessage msg;
+		
+		public VaxFailed(VaxxerMessage msg) {
+			this.msg = msg;
+		}
+	}
+	
+	/* The current message to be resent to self in case of exception */
+	private KittenGen.KittenMessage msg;
+	
+	static Behavior<Command> create(){
+		return Behaviors.setup(Vaxxer::new);
+	}
+	
+	private Vaxxer(ActorContext<Command> context) {
+		super(context);
+	}
+	
+	/* Sends KittenMessage to vax() method and handles restart signal in case of exception during excecution */
+	@Override
+	public Receive<Command> createReceive(){
+		return newReceiveBuilder()
+				.onMessage(KittenGen.KittenMessage.class, this::vax)
+				.onSignal(PreRestart.class, signal -> preRestart())
+				.build();
+	}
+	
+	/* Saves the message in case of exception to allow for resending, and vaxxes the kittens */
+	public Behavior<Command> vax(KittenGen.KittenMessage msg){
+		this.msg = msg;		
+		
+		for(Kitten k : msg.batch) {
+			k.setVaxxed(true);
+		}
+		/* Sends the newly vaxxed kitten batch back to the Vet to be sent to the server */
+		msg.replyTo.tell(new VaxxerMessage(msg.batch));
+		return this;
+	}
+	
+	/* Signal routing in case of exception. Will allow for three attempts before ditching message and letting vet know of failed batch vax.
+	 * Resends the message to self to try again once the child is restarted */
+	private Behavior<Command> preRestart(){
+		
+		if(msg.attempts < 3) {
+			msg.attempts++;
+			getContext().getSelf().tell(msg);
+		}
+		else {
+			
+		}
+		return this;		
+	}	
+}
