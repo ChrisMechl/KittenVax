@@ -27,7 +27,8 @@ public class KittenGen extends AbstractBehavior<Vet.Command>{
 		ActorRef<Command> replyTo;
 		/* KittenMessage will always start with 0 attempts. This is changed by Vaxxer in case of failure to parse unvaxxed kittens */
 		public int attempts = 0;
-		public int count = 0;
+		/* count is the index in the for loop when creating batches/messages. It is therefore unique and helps Vet with naming it's children */
+		public int count;
 		
 		public KittenMessage(ArrayList<Kitten> batch, ActorRef<Command> replyTo) {
 			this.batch = batch;
@@ -66,7 +67,6 @@ public class KittenGen extends AbstractBehavior<Vet.Command>{
 				.build();
 	}
 	
-	//TODO handle generating nBatches here or in Vet?
 	/* On Start receive, generate kittens and send reply with kitten batch */
 	private Behavior<Command> onStart(Vet.Start msg) {
 		for(int i = 0; i < msg.nTimes; i++) {
@@ -78,8 +78,8 @@ public class KittenGen extends AbstractBehavior<Vet.Command>{
 			reply.count = i;
 			msg.replyTo.tell(reply);
 		}
-		
-		return this;
+		/* After producing all kittens and sending them this actor is no longer needed */
+		return Behaviors.stopped();
 	}
 	
 	/* Creates n kittens, with a 20% chance of being vaxxed already,
@@ -100,5 +100,4 @@ public class KittenGen extends AbstractBehavior<Vet.Command>{
 		}
 		return kittens;
 	}
-
 }
