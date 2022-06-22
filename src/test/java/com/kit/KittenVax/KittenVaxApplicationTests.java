@@ -29,7 +29,7 @@ class KittenVaxApplicationTests {
 	
 	/* Tests that KittenGen responds with a KittenMessage when receiving a Start Message */
 	@Test
-	public void startMsgTest() {
+	public void testStartMsg() {
 		/* Spawn KittenGen */
 		ActorRef<Vet.Command> kittenGen = testKit.spawn(KittenGen.create(), "k-gen");
 		/* Send Start message to KittenGen */
@@ -68,6 +68,29 @@ class KittenVaxApplicationTests {
 		}
 	}
 	
+	/* Tests that sending a batch of unvaxxed kittens to Vaxxer will return a batch of vaxxed kittens to Vet */
+	@Test
+	public void testVaxxerChild() {
+		/* Create some unvaxxed kittens */
+		ArrayList<Kitten> unvaxxed = new ArrayList<Kitten>(4);
+		unvaxxed.add(new Kitten(false));
+		unvaxxed.add(new Kitten(false));
+		unvaxxed.add(new Kitten(false));
+		unvaxxed.add(new Kitten(false));
+		
+		/* And some vaxxed kittens of the same size batch */
+		ArrayList<Kitten> vaxxed = new ArrayList<Kitten>(4);
+		vaxxed.add(new Kitten(true));
+		vaxxed.add(new Kitten(true));
+		vaxxed.add(new Kitten(true));
+		vaxxed.add(new Kitten(true));
+		
+		ActorRef<Vet.Command> vaxr = testKit.spawn(Vaxxer.create(), "vaxr");
+		vaxr.tell(new KittenGen.KittenMessage(unvaxxed, probe.getRef()));
+		
+		probe.expectMessage(new Vaxxer.VaxxerMessage(vaxxed));
+	}
+	
 	/* Checks that Vet can successfully send itself a Vaxxer.VaxxerMessage which contains the already vaxxed kittens received from KittenGen */
 	@Test
 	public void testSelfSendVaxxedKittens() {
@@ -90,35 +113,12 @@ class KittenVaxApplicationTests {
 		probe.expectMessage(new Vaxxer.VaxxerMessage(compare));
 	}
 	
-	/* Tests that sending a batch of unvaxxed kittens to Vaxxer will return a batch of vaxxed kittens to Vet */
-	@Test
-	public void testChild() {
-		/* Create some unvaxxed kittens */
-		ArrayList<Kitten> unvaxxed = new ArrayList<Kitten>(4);
-		unvaxxed.add(new Kitten(false));
-		unvaxxed.add(new Kitten(false));
-		unvaxxed.add(new Kitten(false));
-		unvaxxed.add(new Kitten(false));
-		
-		/* And some vaxxed kittens of the same size batch */
-		ArrayList<Kitten> vaxxed = new ArrayList<Kitten>(4);
-		vaxxed.add(new Kitten(true));
-		vaxxed.add(new Kitten(true));
-		vaxxed.add(new Kitten(true));
-		vaxxed.add(new Kitten(true));
-		
-		ActorRef<Vet.Command> vaxr = testKit.spawn(Vaxxer.create(), "vaxr");
-		vaxr.tell(new KittenGen.KittenMessage(unvaxxed, probe.getRef()));
-		
-		probe.expectMessage(new Vaxxer.VaxxerMessage(vaxxed));
-	}
-	
 	/* Tests that an incoming KittenMessage to Vet with some kittens already vaxxed will result in Vet sending
 	 * itself a VaxxerMessage containing only the already vaxxed kittens. The unvaxxed kittens will be forwarded
 	 * to Vaxxer which will then send Vet another VaxxerMessage containing the same number of vaxxed kittens as
 	 * it received unvaxxed. */
 	@Test
-	public void vetForwardKittenMessage() {
+	public void testVetForwardKittenMessage() {
 		
 		/* Create some unvaxxed kittens */
 		ArrayList<Kitten> unvaxxed = new ArrayList<Kitten>(4);
@@ -147,7 +147,6 @@ class KittenVaxApplicationTests {
 		 */
 		probe.expectMessage(new Vaxxer.VaxxerMessage(single));
 		probe.expectMessage(new Vaxxer.VaxxerMessage(vaxxed));	
-		
 	}
 	
 	@AfterClass
