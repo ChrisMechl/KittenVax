@@ -89,7 +89,11 @@ public class Vet extends AbstractBehavior<Vet.Command>{
 	/* On KittenMessage (reply from KittenGen), send batch to be filtered on vax status and delegate to child to vax unvaxxed */
 	private Behavior<Command> delegateBatch(KittenGen.KittenMessage msg) {
 		/* Uses filterVaxxed to get a List of only the vaxxed kittens and removes them from the message batch */
-		List<Kitten> filtered = filterVaxxed(msg.batch);
+		ArrayList<Kitten> filtered = (ArrayList<Kitten>) filterVaxxed(msg.batch);
+		/* Sends message to self containing the ArrayList of already vaxxed kittens */
+		getContext().getSelf().tell(new Vaxxer.VaxxerMessage(filtered));
+		
+		
 		/* Creates a child to handle vaxxing the unvaxxed kittens */
 		ActorRef<Command> child = getContext().spawn(Behaviors.supervise(Vaxxer.create()).onFailure(SupervisorStrategy.restart()), "child");
 		/* Saves the child's ref */
@@ -97,7 +101,6 @@ public class Vet extends AbstractBehavior<Vet.Command>{
 		/* Forwards the KittenMessage to the child */
 		child.tell(msg);
 		
-		//TODO send self vaxxermessage with already filtered kittens
 		return this;
 	}
 	

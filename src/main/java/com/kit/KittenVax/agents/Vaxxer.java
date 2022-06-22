@@ -1,6 +1,7 @@
 package com.kit.KittenVax.agents;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 import com.kit.KittenVax.Kitten;
 import com.kit.KittenVax.agents.Vet.Command;
@@ -20,6 +21,20 @@ public class Vaxxer extends AbstractBehavior<Command>{
 		
 		public VaxxerMessage(ArrayList<Kitten> batch) {
 			this.batch = batch;
+		}
+		
+		@Override 
+		public boolean equals(Object o) {
+			if(this == o) return true;
+			if(!(o instanceof VaxxerMessage)) return false;
+			
+			VaxxerMessage msg = (VaxxerMessage) o;
+			return (this.batch.size() == msg.batch.size()) ? true : false;
+		}
+		
+		@Override
+		public int hashCode() {
+			return Objects.hash(this.batch.size());
 		}
 	}
 	

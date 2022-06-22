@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import com.kit.KittenVax.agents.KittenGen;
+import com.kit.KittenVax.agents.Vaxxer;
 import com.kit.KittenVax.agents.Vet;
 
 import akka.actor.testkit.typed.javadsl.ActorTestKit;
@@ -51,7 +52,7 @@ class KittenVaxApplicationTests {
 		kList.add(new Kitten(false));
 		kList.add(new Kitten(true));
 		
-		List<Kitten> vaxxed = Vet.filterVaxxed(kList);
+		ArrayList<Kitten> vaxxed = (ArrayList<Kitten>) Vet.filterVaxxed(kList);
 		/* Two kittens were vaxxed and put in the vaxxed List */
 		assertEquals(2, vaxxed.size());
 		/* Three kittens were not vaxxed and remained in the original kList */
@@ -65,6 +66,26 @@ class KittenVaxApplicationTests {
 		for(int i = 0; i < 3; i++) {
 			assertTrue(!kList.get(i).isVaxxed());
 		}
+	}
+	
+	//TODO self sending vaxxed kittens from Vet to Vet
+	@Test
+	public void testSelfSendVaxxedKittens() {
+		ArrayList<Kitten> vaxxed = new ArrayList<Kitten>(3);
+		vaxxed.add(new Kitten(true));
+		vaxxed.add(new Kitten(true));
+		vaxxed.add(new Kitten(true));
+		
+//		ActorRef<Vet.Command> vet = testKit.spawn(Vet.create(), "vet");
+		probe.ref().tell(new Vaxxer.VaxxerMessage(vaxxed));
+		
+		probe.expectMessage(new Vaxxer.VaxxerMessage(vaxxed));
+	}
+	
+	//TODO test sending unvaxxed to child
+	@Test
+	public void testChild() {
+		
 	}
 	
 	@AfterClass
