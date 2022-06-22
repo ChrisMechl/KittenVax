@@ -38,7 +38,7 @@ class KittenVaxApplicationTests {
 		/* Create fake batch of kittens to test against response */
 		ArrayList<Kitten> kList = KittenGen.genKittens(nKittens);
 		/* If the response message has the same sized batch and replyTo, it is the expected message */
-		probe.expectMessage(new KittenGen.KittenMessage(kList, kittenGen));
+		probe.expectMessage(new KittenGen.KittenMessage(kList, probe.ref()));
 	}
 	
 	/* Checks that Vet.filterVaxxed returns a List of vaxxed kittens and modifies the input ArrayList to only contain non-vaxxed kittens*/
@@ -103,6 +103,29 @@ class KittenVaxApplicationTests {
 		vaxr.tell(new KittenGen.KittenMessage(unvaxxed, probe.getRef()));
 		
 		probe.expectMessage(new Vaxxer.VaxxerMessage(vaxxed));
+	}
+	
+	/* Tests that an incoming KittenMessage to Vet from KittenGen will result in it being forwarded to Vaxxer */
+	@Test
+	public void vetForwardKittenMessage() {
+		/* Create some unvaxxed kittens */
+		ArrayList<Kitten> unvaxxed = new ArrayList<Kitten>(4);
+		unvaxxed.add(new Kitten(false));
+		unvaxxed.add(new Kitten(false));
+		unvaxxed.add(new Kitten(false));
+		unvaxxed.add(new Kitten(false));
+		
+		/* And some vaxxed kittens of the same size batch */
+		ArrayList<Kitten> vaxxed = new ArrayList<Kitten>(4);
+		vaxxed.add(new Kitten(true));
+		vaxxed.add(new Kitten(true));
+		vaxxed.add(new Kitten(true));
+		vaxxed.add(new Kitten(true));
+		
+		probe.getRef().tell(new KittenGen.KittenMessage(unvaxxed, probe.getRef()));
+		
+		probe.expectMessage(new KittenGen.KittenMessage(unvaxxed, probe.getRef()));
+//		probe.expectMessage(new Vaxxer.VaxxerMessage(vaxxed));
 	}
 	
 	@AfterClass
