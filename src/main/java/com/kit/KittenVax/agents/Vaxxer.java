@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 import com.kit.KittenVax.Kitten;
+import com.kit.KittenVax.agents.KittenGen.KittenMessage;
 import com.kit.KittenVax.agents.Vet.Command;
 
 import akka.actor.typed.Behavior;
@@ -39,10 +40,24 @@ public class Vaxxer extends AbstractBehavior<Command>{
 	}
 	
 	public static class VaxFailed implements Command{
-		VaxxerMessage msg;
+		KittenMessage msg;
 		
-		public VaxFailed(VaxxerMessage msg) {
+		public VaxFailed(KittenMessage msg) {
 			this.msg = msg;
+		}
+		
+		@Override
+		public boolean equals(Object o) {
+			if(this == o) return true;
+			if(!(o instanceof VaxFailed)) return false;
+			
+			VaxFailed msg = (VaxFailed) o;
+			return (msg.msg.batch.size() == this.msg.batch.size() && this.msg.replyTo.toString().equals(msg.msg.replyTo.toString()));
+		}
+		
+		@Override
+		public int hashCode() {
+			return Objects.hash(this.msg.batch.size());
 		}
 	}
 	
@@ -70,6 +85,12 @@ public class Vaxxer extends AbstractBehavior<Command>{
 	public Behavior<Command> vax(KittenGen.KittenMessage msg){
 		this.msg = msg;		
 		
+		/* Used to test what Vaxxer will do if it encounters an exception */
+		if(msg.fails > msg.attempts) {
+			throw new RuntimeException("Failing for the " + this.msg.attempts + " time");
+		}
+		
+		/* Go through batch and vax each kitten */
 		for(Kitten k : msg.batch) {
 			k.setVaxxed(true);
 		}
@@ -81,13 +102,12 @@ public class Vaxxer extends AbstractBehavior<Command>{
 	/* Signal routing in case of exception. Will allow for three attempts before ditching message and letting vet know of failed batch vax.
 	 * Resends the message to self to try again once the child is restarted */
 	private Behavior<Command> preRestart(){
-		
 		if(msg.attempts < 3) {
 			msg.attempts++;
 			getContext().getSelf().tell(msg);
 		}
 		else {
-			
+			msg.replyTo.tell(new VaxFailed(msg));
 		}
 		return this;		
 	}	
