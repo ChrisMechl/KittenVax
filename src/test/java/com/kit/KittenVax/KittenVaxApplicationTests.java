@@ -10,8 +10,8 @@ import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -34,13 +34,9 @@ class KittenVaxApplicationTests {
 	int nKittens = 5;
 	int nTimes = 1;
 	
-	@Before
-	public void setup() {
-		KittenVaxApplication.manageServer(false);
-	}
-	
 	/* Tests that KittenGen responds with a KittenMessage when receiving a Start Message */
 	@Test
+	@Order(3)
 	public void testStartMsg() {
 		/* Spawn KittenGen */
 		ActorRef<Vet.Command> kittenGen = testKit.spawn(KittenGen.create(), "k-gen");
@@ -55,6 +51,7 @@ class KittenVaxApplicationTests {
 	
 	/* Checks that Vet.filterVaxxed returns a List of vaxxed kittens and modifies the input ArrayList to only contain non-vaxxed kittens*/
 	@Test
+	@Order(4)
 	public void testKittenVaxFilter() {
 		/* Create ArrayList of Kittens where two are vaxxed and three are not */
 		ArrayList<Kitten> kList = new ArrayList<Kitten>(5);
@@ -82,6 +79,7 @@ class KittenVaxApplicationTests {
 	
 	/* Tests that sending a batch of unvaxxed kittens to Vaxxer will return a batch of vaxxed kittens to Vet */
 	@Test
+	@Order(5)
 	public void testVaxxerChild() {
 		/* Create some unvaxxed kittens */
 		ArrayList<Kitten> unvaxxed = new ArrayList<Kitten>(4);
@@ -105,6 +103,7 @@ class KittenVaxApplicationTests {
 	
 	/* Checks that Vet can successfully send itself a Vaxxer.VaxxerMessage which contains the already vaxxed kittens received from KittenGen */
 	@Test
+	@Order(6)
 	public void testSelfSendVaxxedKittens() {
 		/* Create a few vaxxed kittens */
 		ArrayList<Kitten> vaxxed = new ArrayList<Kitten>(3);
@@ -130,6 +129,7 @@ class KittenVaxApplicationTests {
 	 * to Vaxxer which will then send Vet another VaxxerMessage containing the same number of vaxxed kittens as
 	 * it received unvaxxed. */
 	@Test
+	@Order(8)
 	public void testVetForwardKittenMessage() {
 		
 		/* Create some unvaxxed kittens */
@@ -164,6 +164,7 @@ class KittenVaxApplicationTests {
 	/* Tests that upon a single failure of a child, the child will throw the exception,
 	 * restart and successfully deliver the message on the next attempt */
 	@Test
+	@Order(9)
 	public void testSingleFailedVaxxer() {
 		ArrayList<Kitten> batch = new ArrayList<Kitten>(3);
 		batch.add(new Kitten(false));
@@ -184,6 +185,7 @@ class KittenVaxApplicationTests {
 	
 	/* Tests that after 3 failures, a child will send a VaxFailed message to it's parent */
 	@Test
+	@Order(10)
 	public void testFourFailedVaxxer() {
 		ArrayList<Kitten> batch = new ArrayList<Kitten>(3);
 		batch.add(new Kitten(false));
@@ -204,6 +206,7 @@ class KittenVaxApplicationTests {
 	
 	/* Tests that the purge() method not only returns true but also overwrites the db file */
 	@Test
+	@Order(1)
 	public void testPurge() {
 		RestClient client = new RestClient();
 		assertTrue(client.purge(dbPath));
@@ -228,6 +231,21 @@ class KittenVaxApplicationTests {
 		}
 	}
 	
+	/* Tests that POSTing some kittens via Vet receiving a VaxxerMessage posts them to the server */
+	@Test
+	@Order(2)
+	public void testVaxSend() {
+		ArrayList<Kitten> vaxxed = new ArrayList<Kitten>(3);
+		vaxxed.add(new Kitten(true));
+		vaxxed.add(new Kitten(true));
+		vaxxed.add(new Kitten(true));
+		
+		ActorRef<Vet.Command> vet = testKit.spawn(Vet.create());
+		vet.tell(new Vaxxer.VaxxerMessage(vaxxed));
+		
+		RestClient client = new RestClient();
+		Assertions.assertNotNull(client.getAll());
+	}
 	
 	@AfterClass
 	public static void cleanup() {
