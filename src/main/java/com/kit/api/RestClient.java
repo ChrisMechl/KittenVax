@@ -26,7 +26,6 @@ import com.kit.KittenVax.Kitten;
 public class RestClient {
 	private static final String URI = "http://localhost:3000/kittens";
 	
-	private HttpClient client = HttpClientBuilder.create().build();
 	private static Gson gson = new Gson();	
 	
 	/* Resets the json file at the path location. It creates a single array with a "kittens" tag */
@@ -58,11 +57,13 @@ public class RestClient {
 			}
 		}
 		
+		System.out.println("Purged database");
 		return true;
 	}
 	
 	/* Attempts to post the given kitten to the server */
 	public boolean postRequest(Kitten k) {
+		HttpClient client = HttpClientBuilder.create().build();
 		HttpPost post = new HttpPost(URI);
 		StringEntity toPersist;
 		
@@ -96,6 +97,7 @@ public class RestClient {
 	
 	/* Prints kittens by name */
 	public boolean getByName(Kitten k) {
+		HttpClient client = HttpClientBuilder.create().build();
 		URIBuilder builder;
 		HttpResponse resp;
 		HttpGet get;
@@ -136,6 +138,7 @@ public class RestClient {
 	
 	/* Gets all Kittens and prints them to console */
 	public boolean getAll() {
+		HttpClient client = HttpClientBuilder.create().build();
 		URIBuilder builder;
 		HttpResponse resp;
 		HttpGet get;
