@@ -115,8 +115,13 @@ public class Vet extends AbstractBehavior<Vet.Command>{
 	
 	/* Receives a batch of vaxxed kittens to send to the server */
 	private Behavior<Command> sendVaxxed(Vaxxer.VaxxerMessage msg){
+		int code;
 		for(Kitten k : msg.batch) {
-			client.postRequest(k);
+			code = client.postRequest(k);
+			if(code != 201) {
+				System.err.println("Failed persisting Kitten " + k + " Status code: " + code);
+			}
+			
 		}
 		return this;
 	}
