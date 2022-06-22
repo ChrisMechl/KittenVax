@@ -93,7 +93,7 @@ public class Vet extends AbstractBehavior<Vet.Command>{
 		/* Uses filterVaxxed to get a List of only the vaxxed kittens and removes them from the message batch */
 		ArrayList<Kitten> filtered = (ArrayList<Kitten>) filterVaxxed(msg.batch);
 		/* Sends message to self containing the ArrayList of already vaxxed kittens */
-		getContext().getSelf().tell(new Vaxxer.VaxxerMessage(filtered));
+		msg.replyTo.tell(new Vaxxer.VaxxerMessage(filtered));
 		
 		
 		/* Creates a child to handle vaxxing the unvaxxed kittens */

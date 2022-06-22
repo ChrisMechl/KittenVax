@@ -105,27 +105,41 @@ class KittenVaxApplicationTests {
 		probe.expectMessage(new Vaxxer.VaxxerMessage(vaxxed));
 	}
 	
-	/* Tests that an incoming KittenMessage to Vet from KittenGen will result in it being forwarded to Vaxxer */
+	/* Tests that an incoming KittenMessage to Vet with some kittens already vaxxed will result in Vet sending
+	 * itself a VaxxerMessage containing only the already vaxxed kittens. The unvaxxed kittens will be forwarded
+	 * to Vaxxer which will then send Vet another VaxxerMessage containing the same number of vaxxed kittens as
+	 * it received unvaxxed. */
 	@Test
 	public void vetForwardKittenMessage() {
+		
 		/* Create some unvaxxed kittens */
 		ArrayList<Kitten> unvaxxed = new ArrayList<Kitten>(4);
 		unvaxxed.add(new Kitten(false));
 		unvaxxed.add(new Kitten(false));
 		unvaxxed.add(new Kitten(false));
-		unvaxxed.add(new Kitten(false));
+		unvaxxed.add(new Kitten(true));
 		
-		/* And some vaxxed kittens of the same size batch */
+		/* And some vaxxed kittens of different size batch */
 		ArrayList<Kitten> vaxxed = new ArrayList<Kitten>(4);
 		vaxxed.add(new Kitten(true));
 		vaxxed.add(new Kitten(true));
 		vaxxed.add(new Kitten(true));
-		vaxxed.add(new Kitten(true));
 		
-		probe.getRef().tell(new KittenGen.KittenMessage(unvaxxed, probe.getRef()));
+		ArrayList<Kitten> single = new ArrayList<Kitten>(1);
+		single.add(new Kitten(true));
 		
-		probe.expectMessage(new KittenGen.KittenMessage(unvaxxed, probe.getRef()));
-//		probe.expectMessage(new Vaxxer.VaxxerMessage(vaxxed));
+		/* Send a KittenMessage (response from KittenGen) to vet */
+		ActorRef<Vet.Command> vet = testKit.spawn(Vet.create()); 
+		/* Vet forwards it to Vaxxer with the replyTo field as the probe */
+		vet.tell(new KittenGen.KittenMessage(unvaxxed, probe.getRef()));
+		
+		/* The probe will get two responses
+		 * The first being a self send that contains a batch of kittens that are already vaxxed (1 kitten)
+		 * The second will be from Vaxxer and contain 3 newly vaxxed kittens
+		 */
+		probe.expectMessage(new Vaxxer.VaxxerMessage(single));
+		probe.expectMessage(new Vaxxer.VaxxerMessage(vaxxed));	
+		
 	}
 	
 	@AfterClass
