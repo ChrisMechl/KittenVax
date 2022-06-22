@@ -3,9 +3,14 @@ package com.kit.KittenVax;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,8 +18,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import com.kit.KittenVax.agents.KittenGen;
 import com.kit.KittenVax.agents.Vaxxer;
 import com.kit.KittenVax.agents.Vet;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
+import com.kit.api.RestClient;
 
 import akka.actor.testkit.typed.javadsl.ActorTestKit;
 import akka.actor.testkit.typed.javadsl.TestProbe;
@@ -23,12 +27,17 @@ import akka.actor.typed.ActorRef;
 @SpringBootTest
 class KittenVaxApplicationTests {
 
-//	Config config = ConfigFactory.load();
+	private static String dbPath = "/home/chris/workspace/KittenVax/db.json";
 	static final ActorTestKit testKit = ActorTestKit.create();
 	TestProbe<Vet.Command> probe = testKit.createTestProbe();
 	
 	int nKittens = 5;
 	int nTimes = 1;
+	
+	@Before
+	public void setup() {
+		KittenVaxApplication.manageServer(false);
+	}
 	
 	/* Tests that KittenGen responds with a KittenMessage when receiving a Start Message */
 	@Test
@@ -191,6 +200,32 @@ class KittenVaxApplicationTests {
 		Assertions.assertThrows(RuntimeException.class, null);
 		/* After 3 consecutive fails, child will send a VaxFailed message to Vet */
 		probe.expectMessage(new Vaxxer.VaxFailed(new KittenGen.KittenMessage(batch, probe.ref())));
+	}
+	
+	/* Tests that the purge() method not only returns true but also overwrites the db file */
+	@Test
+	public void testPurge() {
+		RestClient client = new RestClient();
+		assertTrue(client.purge(dbPath));
+		
+		BufferedReader reader;
+		try {
+			reader = new BufferedReader(new FileReader(dbPath));
+		}
+		catch(IOException e) {
+			System.err.println("Failed to open file at " + dbPath);
+			System.err.println("Make sure server isn't running");
+			assertTrue(false);
+			return;
+		}
+		
+		String db = reader.lines().collect(Collectors.joining());
+		assertEquals("{\"kittens\":[]}", db);
+		try {
+			reader.close();
+		} catch (IOException e) {
+			return;
+		}
 	}
 	
 	
