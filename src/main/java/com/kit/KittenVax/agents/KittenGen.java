@@ -39,12 +39,11 @@ public class KittenGen extends AbstractBehavior<Vet.Command>{
 			if(!(o instanceof KittenMessage)) return false;
 			
 			KittenMessage msg = (KittenMessage) o;
-			return (!msg.replyTo.equals(this.replyTo) && msg.batch.size() == this.batch.size()) ? true : false;
+			return (msg.replyTo.toString().equals(this.replyTo.toString()) && msg.batch.size() == this.batch.size()) ? true : false;
 		}
 		
 		@Override 
 		public int hashCode() {
-			System.out.println(replyTo.toString());
 			return Objects.hash(replyTo.toString(), batch.size());
 			
 		}
