@@ -16,9 +16,16 @@ import akka.actor.typed.javadsl.Receive;
 
 public class KittenGen extends AbstractBehavior<Vet.Command>{
 	
+	/* Message sent to Vet actor that contains -
+	 * 
+	 * batch: The ArrayList of n kittens (n from the Start message received)
+	 * replyTo: The Vet ref (this message will be forwarded to the Vaxxer child and that child needs to send its response to Vet)
+	 * attempts: The number of tries Vaxxer has made to vax the unvaxxed kittens 
+	 */
 	public static class KittenMessage implements Vet.Command{
 		public final ArrayList<Kitten> batch;
 		ActorRef<Command> replyTo;
+		/* KittenMessage will always start with 0 attempts. This is changed by Vaxxer in case of failure to parse unvaxxed kittens */
 		public int attempts = 0;
 		
 		public KittenMessage(ArrayList<Kitten> batch, ActorRef<Command> replyTo) {
