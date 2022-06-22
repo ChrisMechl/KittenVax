@@ -23,6 +23,9 @@ public class KittenGen extends AbstractBehavior<Vet.Command>{
 	 * attempts: The number of tries Vaxxer has made to vax the unvaxxed kittens 
 	 */
 	public static class KittenMessage implements Vet.Command{
+		/* Field used exclusively to test what Vaxxer will do when an exception is encountered */
+		public int fails = 0;
+		
 		public final ArrayList<Kitten> batch;
 		ActorRef<Command> replyTo;
 		/* KittenMessage will always start with 0 attempts. This is changed by Vaxxer in case of failure to parse unvaxxed kittens */
