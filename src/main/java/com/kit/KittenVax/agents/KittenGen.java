@@ -19,6 +19,7 @@ public class KittenGen extends AbstractBehavior<Vet.Command>{
 	public static class KittenMessage implements Vet.Command{
 		public final ArrayList<Kitten> batch;
 		ActorRef<Command> replyTo;
+		public int attempts = 0;
 		
 		public KittenMessage(ArrayList<Kitten> batch, ActorRef<Command> replyTo) {
 			this.batch = batch;
