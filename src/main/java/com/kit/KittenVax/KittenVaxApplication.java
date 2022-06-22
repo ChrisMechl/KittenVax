@@ -12,11 +12,13 @@ import akka.actor.typed.ActorSystem;
 @SpringBootApplication
 public class KittenVaxApplication {
 
+	private static String dbPath = "/home/chris/workspace/KittenVax/db.json";
+	
 	public static void main(String[] args) {
 		SpringApplication.run(KittenVaxApplication.class, args);
 		
-//		RestClient client = new RestClient();
-//		System.out.println(client.getRequest());
+		RestClient client = new RestClient();
+//		client.purge(dbPath);
 		start();
 	}
 	
