@@ -62,7 +62,7 @@ public class RestClient {
 	}
 	
 	/* Attempts to post the given kitten to the server */
-	public boolean postRequest(Kitten k) {
+	public int postRequest(Kitten k) {
 		HttpClient client = HttpClientBuilder.create().build();
 		HttpPost post = new HttpPost(URI);
 		StringEntity toPersist;
@@ -71,7 +71,7 @@ public class RestClient {
 			toPersist = new StringEntity(gson.toJson(k));
 		} catch (UnsupportedEncodingException e) {
 			System.err.println("Failed creating Json representation of Kitten: " + k);
-			return false;			
+			return -1;			
 		}
 		
 		post.setEntity(toPersist);
@@ -83,20 +83,18 @@ public class RestClient {
 		}
 		catch (ClientProtocolException e) {
 			System.err.println("Error in HTTP protocol for POST with Kitten: " + k);
-			return false;
+			return -1;
 		}
 		catch (IOException e) {
 			System.err.println("Failure to POST due to IO Exception");
-			return false;
+			return -1;
 		}
 		
-		if(resp.getStatusLine().getStatusCode() == 201) return true;
-		System.err.println("Problem posting to server. Status code: " + resp.getStatusLine().getStatusCode());
-		return false;
+		return resp.getStatusLine().getStatusCode();		
 	}
 	
 	/* Prints kittens by name */
-	public boolean getByName(Kitten k) {
+	public String getByName(Kitten k) {
 		HttpClient client = HttpClientBuilder.create().build();
 		URIBuilder builder;
 		HttpResponse resp;
@@ -110,7 +108,7 @@ public class RestClient {
 		} 
 		catch (URISyntaxException e1) {
 			System.err.println("Failed to create GET URI due to bad syntax");
-			return false;
+			return null;
 		}
 		
 		try {
@@ -119,11 +117,11 @@ public class RestClient {
 		} 
 		catch (ClientProtocolException e) {
 			System.err.println("Error in HTTP protocol for GET with Kitten " + k);
-			return false;
+			return null;
 		} 
 		catch (IOException e) {
 			System.err.println("Failure to GET due to IO Exception");
-			return false;
+			return null;
 		}
 		
 		String text = new BufferedReader(
@@ -132,12 +130,11 @@ public class RestClient {
 			        .filter(c -> !c.equals("[") && !c.equals("]"))
 			        .collect(Collectors.joining("\n"));
 		
-		System.out.println(text);
-		return true;
+		return text;
 	}
 	
 	/* Gets all Kittens and prints them to console */
-	public boolean getAll() {
+	public String getAll() {
 		HttpClient client = HttpClientBuilder.create().build();
 		URIBuilder builder;
 		HttpResponse resp;
@@ -150,7 +147,7 @@ public class RestClient {
 		} 
 		catch (URISyntaxException e1) {
 			System.err.println("Failed to create GET URI due to bad syntax");
-			return false;
+			return null;
 		}
 		
 		try {
@@ -159,11 +156,11 @@ public class RestClient {
 		} 
 		catch (ClientProtocolException e) {
 			System.err.println("Error in HTTP protocol for GET all Kittens");
-			return false;
+			return null;
 		} 
 		catch (IOException e) {
 			System.err.println("Failure to GET due to IO Exception");
-			return false;
+			return null;
 		}
 		
 		String text = new BufferedReader(
@@ -172,7 +169,6 @@ public class RestClient {
 			        .filter(c -> !c.equals("[") && !c.equals("]"))
 			        .collect(Collectors.joining("\n"));
 		
-		System.out.println(text);
-		return true;
+		return text;
 	}
 }
