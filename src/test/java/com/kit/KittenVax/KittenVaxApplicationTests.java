@@ -32,7 +32,7 @@ class KittenVaxApplicationTests {
 	TestProbe<Vet.Command> probe = testKit.createTestProbe();
 	
 	int nKittens = 5;
-	int nTimes = 1;
+	int nTimes = 2;
 	
 	/* Tests that KittenGen responds with a KittenMessage when receiving a Start Message */
 	@Test
@@ -45,8 +45,14 @@ class KittenVaxApplicationTests {
 		
 		/* Create fake batch of kittens to test against response */
 		ArrayList<Kitten> kList = KittenGen.genKittens(nKittens);
-		/* If the response message has the same sized batch and replyTo, it is the expected message */
-		probe.expectMessage(new KittenGen.KittenMessage(kList, probe.ref()));
+		
+		/* Test that the probe received nTimes messages */
+		for(int i = 0; i < nTimes; i++){
+			/* If the response message has the same sized batch and replyTo, it is the expected message */
+			probe.expectMessage(new KittenGen.KittenMessage(kList, probe.ref()));
+		}
+		/* After we've done it nTimes, make sure no other messages are received */
+		probe.expectNoMessage();
 	}
 	
 	/* Checks that Vet.filterVaxxed returns a List of vaxxed kittens and modifies the input ArrayList to only contain non-vaxxed kittens*/
